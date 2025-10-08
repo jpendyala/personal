@@ -1,0 +1,271 @@
+# GitHub Copilot Custom Instructions
+You are assisting in building a project called **Agentic Knowledge Graph Builder for Financial Data Products**.
+
+## 🎯 Goal
+Build an agentic knowledge graph system for **financial data products** — focusing first on CSV input, then extendable to Databricks later.  
+
+The system connects **Customers, Agreements, Payments, Collateral** data into a unified **Neo4j knowledge graph**, using **LangGraph**, **LangChain**, and **OpenAI**.
+
+---
+
+## 🧩 Architecture Overview
+
+### Phase 1: CSV Pipeline (Primary Hackathon Focus)
+- Input: Local CSV files (`customers.csv`, `agreements.csv`, `payments.csv`, `collateral.csv`)
+- Agents:
+  - Intent understanding
+  - File selector
+  - Schema proposal and critic
+  - Graph builder
+  - Query agent
+- Output: Neo4j knowledge graph
+
+### Phase 2 (Future): Databricks Integration
+- Replace CSV reading logic with SQLAlchemy-based schema discovery.
+- Same agent flow, but using Databricks Delta tables instead of CSVs.
+
+---
+
+## 🧠 Key Libraries & Setup
+Use:
+- `langchain`
+- `langgraph`
+- `openai`
+- `neo4j`
+- `pandas`
+- `streamlit`
+- `python-dotenv`
+
+Later, for Databricks:
+- `sqlalchemy`
+- `databricks-sql-connector`
+
+---
+
+## 🧱 Folder Structure (Copilot must maintain)
+
+agentic-kg-finance/
+│── README.md
+│── docker-compose.yml
+│── .env.example
+│
+├── data/
+│ ├── customers.csv
+│ ├── agreements.csv
+│ ├── payments.csv
+│ └── collateral.csv
+│
+├── app/
+│ ├── requirements.txt
+│ ├── config.py
+│ │
+│ ├── agents/
+│ │ ├── intent_agent.py
+│ │ ├── file_selector_agent.py
+│ │ ├── schema_proposal_agent.py
+│ │ ├── schema_critic_agent.py
+│ │ ├── graph_builder_agent.py
+│ │ └── query_agent.py
+│ │
+│ ├── workflows/
+│ │ └── structured_pipeline.py
+│ │
+│ ├── utils/
+│ │ ├── csv_loader.py
+│ │ ├── neo4j_helper.py
+│ │ └── databricks_connector.py # placeholder for future
+│ │
+│ └── ui.py
+
+---
+
+## ⚙️ Copilot Implementation Guidelines
+
+- Each agent should be implemented as a **class with a `run()` method**.  
+- Use `pandas` for reading CSVs; first five rows are enough to infer schema.  
+- Graph insertions go through a helper (`neo4j_helper.py`).  
+- Focus on making it **end-to-end runnable** with CSVs and Neo4j locally.  
+- Use **LangGraph** for the pipeline orchestration (`StateGraph` or `SequentialGraph`).  
+- Every file must include docstrings, type hints, and logging.
+
+---
+
+## 🧩 LangGraph Flow
+Define nodes in this order:
+IntentAgent → FileSelectorAgent → SchemaProposalAgent → GraphBuilderAgent → QueryAgent
+Each passes forward:
+- `intent`
+- `selected_files`
+- `schema_proposals`
+- `graph_status`
+
+---
+
+## 🚀 Example User Query
+> "Build a KG connecting customers, agreements, and payments."
+
+Expected:
+1. IntentAgent extracts entities.
+2. FileSelectorAgent selects relevant CSVs.
+3. SchemaProposalAgent infers node & relationship structure.
+4. GraphBuilderAgent loads CSVs → Neo4j nodes & edges.
+5. QueryAgent enables Cypher queries (optional in hackathon).
+
+---
+
+## 🧩 CSV Schema Example
+
+**customers.csv**
+customer_id, name, segment
+C001, Alice, Retail
+C002, Bob, SME
+
+**agreements.csv**
+agreement_id, customer_id, amount, start_date
+A001, C001, 10000, 2024-01-01
+
+**payments.csv**
+payment_id, agreement_id, amount, date
+P001, A001, 2000, 2024-02-01
+
+---
+
+## 🧪 Expected Copilot Behavior
+- Generate modular Python files with docstrings and clear interfaces.
+- Use the OpenAI API through LangChain for schema inference.
+- Create clear relationships like:
+  - `(Customer)-[:HAS_AGREEMENT]->(Agreement)`
+  - `(Agreement)-[:HAS_PAYMENT]->(Payment)`
+- Code should be **runnable in Docker Compose** with `neo4j` service.
+
+---
+
+## 🔒 Security & Credentials
+- Use `.env` for environment variables (OpenAI, Neo4j).
+- Never hardcode credentials.
+- Respect `config.py` structure.
+
+---
+
+## ✅ Deliverables
+1. A working CSV → Neo4j agentic KG pipeline.  
+2. Streamlit UI to run and visualize results.  
+3. Clean modular agents and workflows that can later connect to Databricks.
+
+✅ Copy This as INSTRUCTIONS.md
+# 🧭 Agentic Knowledge Graph Builder (CSV Pipeline First)
+
+This document defines the step-by-step **build plan** for GitHub Copilot to create the CSV-based agentic KG pipeline.
+
+---
+
+## 🔹 Step 1: Environment Setup
+
+- Create project folder `agentic-kg-finance/`
+- Add `.env.example`
+  ```env
+  OPENAI_API_KEY=your_key_here
+  NEO4J_URI=bolt://neo4j:7687
+  NEO4J_USER=neo4j
+  NEO4J_PASSWORD=password
+Add requirements.txt
+langchain
+langgraph
+openai
+neo4j
+pandas
+streamlit
+python-dotenv
+🔹 Step 2: Add Configuration Loader
+File: app/config.py
+Load .env and provide:
+OpenAI key
+Neo4j URI, user, password
+Add helper functions:
+def get_openai_model(model="gpt-4o-mini"):
+    return ChatOpenAI(model=model)
+
+def get_neo4j_driver():
+    return GraphDatabase.driver(uri, auth=(user, password))
+🔹 Step 3: Implement CSV Loader Utility
+File: app/utils/csv_loader.py
+Use pandas to read CSVs and preview headers.
+Example:
+import pandas as pd
+def load_csv_metadata(file_path: str):
+    df = pd.read_csv(file_path, nrows=5)
+    return list(df.columns)
+🔹 Step 4: Implement Neo4j Helper
+File: app/utils/neo4j_helper.py
+Initialize Neo4j driver.
+Provide:
+create_node(label, properties)
+create_relationship(parent_label, child_label, parent_id, child_id, rel_type)
+run_cypher(query)
+🔹 Step 5: Build Agents
+IntentAgent
+Extract entities (customer, agreements, etc.) from user input.
+Use OpenAI model via LangChain.
+FileSelectorAgent
+Match entities to CSVs in data/.
+SchemaProposalAgent
+Generate node/relationship schema proposals using column headers.
+GraphBuilderAgent
+Create nodes and edges in Neo4j using neo4j_helper.
+QueryAgent
+(Optional) Convert NL → Cypher queries for exploration.
+🔹 Step 6: Create Orchestration Workflow
+File: app/workflows/structured_pipeline.py
+Use LangGraph’s StateGraph.
+Define:
+IntentAgent → FileSelectorAgent → SchemaProposalAgent → GraphBuilderAgent
+Pass intermediate context.
+Log key steps.
+🔹 Step 7: Add Streamlit UI
+File: app/ui.py
+Text input: “Describe your KG goal”
+Button: “Build Knowledge Graph”
+Show:
+Selected files
+Proposed schema
+Graph build confirmation
+🔹 Step 8: Add Example Data
+/data folder:
+customers.csv
+agreements.csv
+payments.csv
+collateral.csv
+Populate small dummy data for testing.
+🔹 Step 9: Docker Setup
+File: docker-compose.yml
+version: "3"
+services:
+  neo4j:
+    image: neo4j:5.13
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/password
+  app:
+    build: .
+    command: streamlit run app/ui.py
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    env_file: .env
+🔹 Step 10: Demo Plan
+Run docker-compose up
+Open Streamlit at http://localhost:8501
+Enter:
+“Build a KG connecting customers, agreements, and payments.”
+Observe:
+Agents select CSVs
+Schema proposed
+Graph built in Neo4j
+Open http://localhost:7474 to visualize graph.
+🔹 Step 11: Future Expansion (Databricks)
+Replace csv_loader.py with databricks_connector.py using SQLAlchemy reflection.
+Keep same agent flow.
+Use Databricks table schemas as input
